@@ -41,18 +41,12 @@ namespace BenchMarkMultiThread
             FulfilDictionary();
         }
 
-        [IterationCleanup]
-        public void TearDown()
-        {
-            Dictionary.Clear();
-        }
+        [Benchmark]
+        public void WriteFileStream_AsParallel_AutoBuffered_ImplicityDisposed() =>
+            RunWriteAsFileStreamAsync(ParallelExecutionMode.ForceParallelism, ParallelMergeOptions.AutoBuffered);
 
         [Benchmark]
-        public void SaveFilesParalleling_ForceParallelism_AutoBufferedAsync_AutoDisposed() =>
-            RunWritingWithOptions(ParallelExecutionMode.ForceParallelism, ParallelMergeOptions.AutoBuffered);
-
-        [Benchmark]
-        public void SaveFilesParalleling_ForceParallelism_AutoBufferedAsync_HandledDisposed() =>
+        public void WriteFileStream_AsParallel_AutoBuffered_ExplicitDisposed() =>
             Dictionary
                .AsParallel()
                 .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
@@ -65,23 +59,62 @@ namespace BenchMarkMultiThread
                 });
 
         [Benchmark]
-        public void SaveFilesParalleling_ForEachAsync_AutoDisposed() =>
-            Parallel.ForEach(Dictionary, async file =>
-                {
-                    await WriteFileAsStreamAsync(file);
-                });
+        public void WriteBufferedStream_AsParallel_AutoBuffered_ImplicityDisposed() =>
+            RunWriteAsBufferedStreamAsync(ParallelExecutionMode.ForceParallelism, ParallelMergeOptions.AutoBuffered);
 
         [Benchmark]
-        public void SaveFilesParalleling_ForEachAsync_HandledDisposed() =>
-            Parallel.ForEach(Dictionary, async file =>
+        public void WriteBufferedStream_AsParallel_AutoBuffered_ExplicitDisposed() =>
+            Dictionary
+               .AsParallel()
+                .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+                .WithMergeOptions(ParallelMergeOptions.AutoBuffered)
+                .ForAll(async file =>
                 {
-                    var (stream, task) = WriteFileAsStream(file);
+                    var (stream, task) = WriteFileAsBufferedStream(file);
                     await task;
                     stream.Close();
                 });
 
         [Benchmark]
-        public async Task SaveFiles_Async()
+        public void WriteFileStream_ParallelForEach_ImplicityDisposed() =>
+            Parallel.ForEach(Dictionary, async file =>
+                {
+                    await WriteFileAsBufferedStreamAsync(file);
+                });
+
+        [Benchmark]
+        public void WriteFileStream_ParallelForEach_ExplicityDisposed() =>
+            Parallel.ForEach(Dictionary, async file =>
+                {
+                    var (stream, task) = WriteFileAsBufferedStream(file);
+                    await task;
+                    stream.Close();
+                });
+
+        [Benchmark]
+        public async Task WriteBufferedStream_Async()
+        {
+            var streams = new List<BufferedStream>();
+            var tasks = new List<Task>();
+
+            Dictionary
+               .ToList()
+               .ForEach(file =>
+                   {
+                       var result = WriteFileAsBufferedStream(file);
+
+                       tasks.Add(result.task);
+                       streams.Add(result.stream);
+                   });
+
+            await Task.WhenAll(tasks);
+            streams
+               .ToList()
+               .ForEach(stream => stream.Close());
+        }
+
+        [Benchmark]
+        public async Task WriteFileStream_Async()
         {
             var streams = new List<FileStream>();
             var tasks = new List<Task>();
@@ -89,12 +122,12 @@ namespace BenchMarkMultiThread
             Dictionary
                .ToList()
                .ForEach(file =>
-                   {
-                       var result = WriteFileAsStream(file);
+               {
+                   var result = WriteFileAsStream(file);
 
-                       tasks.Add(result.task);
-                       streams.Add(result.stream);
-                   });
+                   tasks.Add(result.task);
+                   streams.Add(result.stream);
+               });
 
             await Task.WhenAll(tasks);
             streams
@@ -110,13 +143,6 @@ namespace BenchMarkMultiThread
             }
         }
 
-        private void RunWritingWithOptions(ParallelExecutionMode executionMode, ParallelMergeOptions mergeOptions) =>
-            Dictionary
-                .AsParallel()
-                .WithExecutionMode(executionMode)
-                .WithMergeOptions(mergeOptions)
-                .ForAll(async file => await WriteFileAsStreamAsync(file));
-
         private string GetText() =>
             new(Enumerable.Repeat(CHARS, TEXT_SIZE).Select(s => s[Random.Next(s.Length)]).ToArray());
 
@@ -131,8 +157,6 @@ namespace BenchMarkMultiThread
                         Dictionary.Add(fileName, text);
                     });
 
-
-
         private string GetValidFileName()
         {
             string fileName;
@@ -144,11 +168,35 @@ namespace BenchMarkMultiThread
             return fileName;
         }
 
+        private string GetFilePath(string fileName) =>
+            System.IO.Path.Combine(FilesPath, $"{fileName}.txt");
+
+        private void RunWriteAsFileStreamAsync(ParallelExecutionMode executionMode, ParallelMergeOptions mergeOptions) =>
+            Dictionary
+                .AsParallel()
+                .WithExecutionMode(executionMode)
+                .WithMergeOptions(mergeOptions)
+                .ForAll(async file => await WriteFileAsStreamAsync(file));
+
+        private void RunWriteAsBufferedStreamAsync(ParallelExecutionMode executionMode, ParallelMergeOptions mergeOptions) =>
+            Dictionary
+                .AsParallel()
+                .WithExecutionMode(executionMode)
+                .WithMergeOptions(mergeOptions)
+                .ForAll(async file => await WriteFileAsBufferedStreamAsync(file));
+
         private async Task WriteFileAsStreamAsync(KeyValuePair<string, string> file)
         {
-            CreateFileStream(file, out byte[] result, out FileStream stream);
+            string filePath = GetFilePath(file.Key);
+            var result = UnicodeEncoding.GetBytes(file.Value);
+            var buffer = result.Length;
+            var share = FileShare.ReadWrite;
+            var mode = FileMode.OpenOrCreate;
+            var access = FileAccess.ReadWrite;
+            var options = FileOptions.Asynchronous;
+
+            using var stream = new FileStream(filePath, mode, access, share, buffer, options);
             await stream.WriteAsync(result.AsMemory(0, result.Length));
-            stream.Close();
         }
 
         private (FileStream stream, Task task) WriteFileAsStream(KeyValuePair<string, string> file)
@@ -171,7 +219,40 @@ namespace BenchMarkMultiThread
             stream = new FileStream(filePath, mode, access, share, buffer, options);
         }
 
-        private string GetFilePath(string fileName) =>
-            System.IO.Path.Combine(FilesPath, $"{fileName}.txt");
+        private async Task WriteFileAsBufferedStreamAsync(KeyValuePair<string, string> file)
+        {
+            string filePath = GetFilePath(file.Key);
+            var result = UnicodeEncoding.GetBytes(file.Value);
+            var buffer = result.Length;
+            var share = FileShare.ReadWrite;
+            var mode = FileMode.OpenOrCreate;
+            var access = FileAccess.ReadWrite;
+            var options = FileOptions.Asynchronous;
+
+            using var stream = new FileStream(filePath, mode, access, share, buffer, options);
+            using var bufferedStream = new BufferedStream(stream, result.Length);
+            await bufferedStream.WriteAsync(result.AsMemory(0, result.Length));
+        }
+
+        private (BufferedStream stream, Task task) WriteFileAsBufferedStream(KeyValuePair<string, string> file)
+        {
+            CreateBufferedStream(file, out byte[] result, out BufferedStream stream);
+            var task = stream.WriteAsync(result, 0, result.Length);
+            return (stream, task);
+        }
+
+        private void CreateBufferedStream(KeyValuePair<string, string> file, out byte[] result, out BufferedStream bufferedStream)
+        {
+            string filePath = GetFilePath(file.Key);
+            result = UnicodeEncoding.GetBytes(file.Value);
+            var buffer = result.Length;
+            var share = FileShare.ReadWrite;
+            var mode = FileMode.OpenOrCreate;
+            var access = FileAccess.ReadWrite;
+            var options = FileOptions.Asynchronous;
+
+            var stream = new FileStream(filePath, mode, access, share, buffer, options);
+            bufferedStream = new BufferedStream(stream, result.Length);
+        }
     }
 }
