@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>BenchMarkMultiThread.BenchMark-20210509-180410</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19041.928 (2004/?/20H1)
+Intel Core i7-7500U CPU 2.70GHz (Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+.NET Core SDK=5.0.202
+  [Host]     : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT  [AttachedDebugger]
+  Job-OPYBUF : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
+</code></pre>
+<pre><code>EvaluateOverhead=True  Runtime=.NET Core 5.0  InvocationCount=1  
+RunStrategy=Monitoring  UnrollFactor=1  
+</code></pre>
+
+<table>
+<thead><tr><th>                                                 Method</th><th>iterations</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Gen 0</th><th>Gen 1</th><th>Gen 2</th><th>Allocated</th><th>Completed Work Items</th><th>Lock Contentions</th>
+</tr>
+</thead><tbody><tr><td>WriteFileStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>1000</td><td>506.4 ms</td><td>120.22 ms</td><td>79.52 ms</td><td>491.4 ms</td><td>-</td><td>-</td><td>-</td><td>1.46 MB</td><td>2005.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>1000</td><td>555.7 ms</td><td>242.72 ms</td><td>160.54 ms</td><td>560.8 ms</td><td>-</td><td>-</td><td>-</td><td>1.32 MB</td><td>2005.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>1000</td><td>463.6 ms</td><td>50.84 ms</td><td>33.63 ms</td><td>458.1 ms</td><td>-</td><td>-</td><td>-</td><td>1.79 MB</td><td>2005.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>1000</td><td>531.1 ms</td><td>185.08 ms</td><td>122.42 ms</td><td>491.3 ms</td><td>-</td><td>-</td><td>-</td><td>1.64 MB</td><td>2005.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ImplicityDisposed</td><td>1000</td><td>550.5 ms</td><td>218.83 ms</td><td>144.74 ms</td><td>512.5 ms</td><td>-</td><td>-</td><td>-</td><td>1.82 MB</td><td>1693.0000</td><td>1.0000</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ExplicityDisposed</td><td>1000</td><td>880.6 ms</td><td>979.53 ms</td><td>647.90 ms</td><td>513.1 ms</td><td>-</td><td>-</td><td>-</td><td>1.66 MB</td><td>1252.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_Async</td><td>1000</td><td>1,113.0 ms</td><td>859.19 ms</td><td>568.30 ms</td><td>841.4 ms</td><td>-</td><td>-</td><td>-</td><td>1.55 MB</td><td>2001.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_Async</td><td>1000</td><td>842.6 ms</td><td>157.34 ms</td><td>104.07 ms</td><td>774.6 ms</td><td>-</td><td>-</td><td>-</td><td>1.23 MB</td><td>1002.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>3000</td><td>1,517.3 ms</td><td>319.89 ms</td><td>211.59 ms</td><td>1,484.4 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>4.36 MB</td><td>6004.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>3000</td><td>1,440.8 ms</td><td>121.04 ms</td><td>80.06 ms</td><td>1,414.7 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>3.95 MB</td><td>6006.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>3000</td><td>2,391.7 ms</td><td>1,609.67 ms</td><td>1,064.70 ms</td><td>2,038.0 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>5.36 MB</td><td>6005.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>3000</td><td>1,930.7 ms</td><td>1,130.67 ms</td><td>747.87 ms</td><td>1,616.1 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>4.91 MB</td><td>6005.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ImplicityDisposed</td><td>3000</td><td>1,447.2 ms</td><td>212.76 ms</td><td>140.73 ms</td><td>1,452.3 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>5.4 MB</td><td>6120.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ExplicityDisposed</td><td>3000</td><td>1,753.8 ms</td><td>1,113.91 ms</td><td>736.78 ms</td><td>1,488.6 ms</td><td>-</td><td>-</td><td>-</td><td>4.95 MB</td><td>6046.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_Async</td><td>3000</td><td>3,289.5 ms</td><td>808.14 ms</td><td>534.54 ms</td><td>3,241.5 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>4.68 MB</td><td>6002.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_Async</td><td>3000</td><td>2,395.6 ms</td><td>160.13 ms</td><td>105.92 ms</td><td>2,377.5 ms</td><td>1000.0000</td><td>-</td><td>-</td><td>3.72 MB</td><td>3002.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>5000</td><td>2,751.5 ms</td><td>946.64 ms</td><td>626.14 ms</td><td>2,586.3 ms</td><td>2000.0000</td><td>1000.0000</td><td>-</td><td>7.26 MB</td><td>10004.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>5000</td><td>3,364.4 ms</td><td>1,836.74 ms</td><td>1,214.89 ms</td><td>2,885.8 ms</td><td>2000.0000</td><td>1000.0000</td><td>-</td><td>6.57 MB</td><td>10005.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ImplicityDisposed</td><td>5000</td><td>2,641.8 ms</td><td>504.21 ms</td><td>333.51 ms</td><td>2,634.5 ms</td><td>2000.0000</td><td>1000.0000</td><td>-</td><td>8.9 MB</td><td>10005.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_AsParallel_AutoBuffered_ExplicitDisposed</td><td>5000</td><td>3,100.8 ms</td><td>2,254.63 ms</td><td>1,491.30 ms</td><td>2,418.2 ms</td><td>3000.0000</td><td>1000.0000</td><td>-</td><td>8.18 MB</td><td>10005.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ImplicityDisposed</td><td>5000</td><td>3,078.0 ms</td><td>1,339.80 ms</td><td>886.20 ms</td><td>2,893.2 ms</td><td>2000.0000</td><td>-</td><td>-</td><td>8.96 MB</td><td>10163.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_ParallelForEach_ExplicityDisposed</td><td>5000</td><td>2,650.6 ms</td><td>356.02 ms</td><td>235.49 ms</td><td>2,567.8 ms</td><td>2000.0000</td><td>-</td><td>-</td><td>8.23 MB</td><td>10230.0000</td><td>-</td>
+</tr><tr><td>WriteBufferedStream_Async</td><td>5000</td><td>5,217.8 ms</td><td>1,525.05 ms</td><td>1,008.73 ms</td><td>5,180.7 ms</td><td>3000.0000</td><td>1000.0000</td><td>1000.0000</td><td>7.84 MB</td><td>10001.0000</td><td>-</td>
+</tr><tr><td>WriteFileStream_Async</td><td>5000</td><td>4,046.8 ms</td><td>496.07 ms</td><td>328.12 ms</td><td>3,951.4 ms</td><td>3000.0000</td><td>1000.0000</td><td>-</td><td>6.24 MB</td><td>5002.0000</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>
